@@ -1,6 +1,6 @@
 import UIKit
 
-class ImageListCell: UITableViewCell {
+final class ImageListCell: UITableViewCell {
 
     @IBOutlet private weak var cellImage: UIImageView!
 
