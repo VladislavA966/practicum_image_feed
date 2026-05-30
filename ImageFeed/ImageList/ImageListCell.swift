@@ -1,7 +1,7 @@
 import UIKit
 
 final class ImageListCell: UITableViewCell {
-
+    ///TODO: Вытащить экшен и кнопку лайка
     @IBOutlet private weak var cellImage: UIImageView!
 
     @IBOutlet private weak var gradientView: UIView!
