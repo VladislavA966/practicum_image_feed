@@ -6,6 +6,15 @@ final class AvatarView: UIView {
     
     override init(frame: CGRect) {
         super.init(frame: frame)
+        setup()
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    
+    private func setup() {
         addSubview(avatarImageView)
         avatarImageView.image = UIImage(named: avatarImageName)
         avatarImageView.contentMode = .scaleAspectFill
@@ -18,10 +27,6 @@ final class AvatarView: UIView {
             avatarImageView.topAnchor.constraint(equalTo: topAnchor),
             avatarImageView.bottomAnchor.constraint(equalTo: bottomAnchor)
         ])
-    }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
     }
 }
 

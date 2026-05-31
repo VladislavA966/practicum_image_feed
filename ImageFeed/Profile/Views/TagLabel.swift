@@ -5,7 +5,7 @@ final class TagLabel: UILabel {
     
     override init(frame: CGRect) {
         super.init(frame: frame)
-        self.textColor = .ypWhite
+        self.textColor = .ypGray
         self.font = UIFont.systemFont(ofSize: 13, weight: .regular)
         self.text = tagText
     }

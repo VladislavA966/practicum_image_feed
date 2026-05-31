@@ -11,7 +11,7 @@ final class ProfileViewController: UIViewController {
     private func setUp() {
         let mainStackView = UIStackView()
         mainStackView.axis = .vertical
-        mainStackView.spacing = 16
+        mainStackView.spacing = 8
         mainStackView.alignment = .leading
         mainStackView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(mainStackView)

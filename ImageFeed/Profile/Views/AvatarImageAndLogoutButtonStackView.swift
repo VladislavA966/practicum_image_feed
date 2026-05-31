@@ -18,5 +18,6 @@ final class AvatarImageAndLogoutButtonStackView: UIStackView {
         addArrangedSubview(logoutButton)
         axis = .horizontal
         distribution = .equalSpacing
+        alignment = .center
     }
   }
