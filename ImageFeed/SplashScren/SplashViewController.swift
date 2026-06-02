@@ -9,7 +9,7 @@ final class SplashViewController: UIViewController {
             switchToTabBarController()
         } else {
             performSegue(
-                withIdentifier: Constants.authFlowEdntifier,
+                withIdentifier: Constants.authFlowIdentifier,
                 sender: nil
             )
         }
@@ -32,12 +32,12 @@ final class SplashViewController: UIViewController {
 
 extension SplashViewController {
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        if segue.identifier == Constants.authFlowEdntifier {
+        if segue.identifier == Constants.authFlowIdentifier {
             guard
                 let navigationController = segue.destination as? UINavigationController,
                 let authViewController = navigationController.viewControllers.first as? AuthViewController
             else {
-                assertionFailure("Failed to prepare for \(Constants.authFlowEdntifier)")
+                assertionFailure("Failed to prepare for \(Constants.authFlowIdentifier)")
                 return
             }
             authViewController.delegate = self

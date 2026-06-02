@@ -10,4 +10,8 @@ final class OAuth2TokenStorage {
         get { UserDefaults.standard.string(forKey: tokenKey) }
         set { UserDefaults.standard.set(newValue, forKey: tokenKey) }
     }
+    
+    func clear() {
+        token = nil
+    }
 }
