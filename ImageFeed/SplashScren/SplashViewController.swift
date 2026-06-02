@@ -1,0 +1,54 @@
+import UIKit
+
+final class SplashViewController: UIViewController {
+    let token = OAuth2TokenStorage.shared.token
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        if token != nil {
+            switchToTabBarController()
+        } else {
+            performSegue(
+                withIdentifier: Constants.authFlowEdntifier,
+                sender: nil
+            )
+        }
+    }
+    
+    private func switchToTabBarController() {
+        guard let window = UIApplication.shared.windows.first else {
+            assertionFailure("Invalid window configuration")
+            return
+        }
+        
+        let tabBarController = UIStoryboard(name: "Main", bundle: .main)
+            .instantiateViewController(withIdentifier: Constants.tabBarViewController)
+           
+        window.rootViewController = tabBarController
+    }
+}
+
+
+
+extension SplashViewController {
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        if segue.identifier == Constants.authFlowEdntifier {
+            guard
+                let navigationController = segue.destination as? UINavigationController,
+                let authViewController = navigationController.viewControllers.first as? AuthViewController
+            else {
+                assertionFailure("Failed to prepare for \(Constants.authFlowEdntifier)")
+                return
+            }
+            authViewController.delegate = self
+        }
+    }
+}
+
+
+extension SplashViewController: AuthViewControllerDelegate {
+    func didAuthenticate(_ vc: AuthViewController) {
+        dismiss(animated: true)
+        switchToTabBarController()
+    }
+}
