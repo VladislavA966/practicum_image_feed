@@ -1,3 +1,4 @@
+import ProgressHUD
 import UIKit
 
 final class AuthViewController: UIViewController {
@@ -22,9 +23,12 @@ final class AuthViewController: UIViewController {
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         if segue.identifier == Constants.webViewSegueIdentifier {
             guard
-                let webViewViewController = segue.destination as? WebViewViewController
+                let webViewViewController = segue.destination
+                    as? WebViewViewController
             else {
-                assertionFailure("Failed to prepare for \(Constants.webViewSegueIdentifier)")
+                assertionFailure(
+                    "Failed to prepare for \(Constants.webViewSegueIdentifier)"
+                )
                 return
             }
             webViewViewController.delegate = self
@@ -40,9 +44,13 @@ extension AuthViewController: WebViewViewControllerDelegate {
         didAuthenticateWithCode code: String
     ) {
         dismiss(animated: true)
+
+        UIBlockingProgressHUD.show()
+
         oauth2Service.fetchOAuthToken(
             code: code,
             { result in
+                UIBlockingProgressHUD.dismiss()
                 switch result {
                 case .success(_):
                     self.delegate?.didAuthenticate(self)
@@ -62,4 +70,3 @@ extension AuthViewController: WebViewViewControllerDelegate {
 protocol AuthViewControllerDelegate: AnyObject {
     func didAuthenticate(_ vc: AuthViewController)
 }
-

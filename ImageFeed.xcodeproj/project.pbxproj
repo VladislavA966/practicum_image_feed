@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		169071582FCF327B00B3DD0B /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 169071572FCF327A00B3DD0B /* WebKit.framework */; };
+		1690725A2FD3C03100B3DD0B /* ProgressHUD in Frameworks */ = {isa = PBXBuildFile; productRef = 169072592FD3C03100B3DD0B /* ProgressHUD */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -71,6 +72,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				169071582FCF327B00B3DD0B /* WebKit.framework in Frameworks */,
+				1690725A2FD3C03100B3DD0B /* ProgressHUD in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -140,6 +142,7 @@
 			);
 			name = ImageFeed;
 			packageProductDependencies = (
+				169072592FD3C03100B3DD0B /* ProgressHUD */,
 			);
 			productName = ImageFeed;
 			productReference = 1643AB6F2FAB1F670088A13B /* ImageFeed.app */;
@@ -223,6 +226,9 @@
 			);
 			mainGroup = 1643AB662FAB1F670088A13B;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				169072132FD3BD8C00B3DD0B /* XCRemoteSwiftPackageReference "ProgressHUD" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 1643AB702FAB1F670088A13B /* Products */;
 			projectDirPath = "";
@@ -616,6 +622,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		169072132FD3BD8C00B3DD0B /* XCRemoteSwiftPackageReference "ProgressHUD" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/relatedcode/ProgressHUD";
+			requirement = {
+				kind = exactVersion;
+				version = 14.1.4;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		169072592FD3C03100B3DD0B /* ProgressHUD */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 169072132FD3BD8C00B3DD0B /* XCRemoteSwiftPackageReference "ProgressHUD" */;
+			productName = ProgressHUD;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 1643AB672FAB1F670088A13B /* Project object */;
 }
