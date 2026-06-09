@@ -82,7 +82,7 @@ final class OAuth2Service {
         guard let authTokenUrl = urlComponents.url else { return nil }
 
         var request = URLRequest(url: authTokenUrl)
-        request.httpMethod = HTTPMethod.post.rawValue
+        request.httpMethod = HTTPMethod.post
         return request
     }
 
