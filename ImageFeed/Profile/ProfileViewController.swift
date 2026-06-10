@@ -2,29 +2,28 @@ import UIKit
 
 final class ProfileViewController: UIViewController {
     private let profileService = ProfileService.shared
+    private let profileImageService = ProfileImageService.shared
     private let avatarImageAndLogoutButtonStackView =
         AvatarImageAndLogoutButtonStackView()
     private let userNameLabel = NameLabel()
     private let tagLabel = TagLabel()
     private let statusLabel = StatusLabel()
+    private var profileImageServiceObserver: NSObjectProtocol?
     override func viewDidLoad() {
         super.viewDidLoad()
         setUpUI()
-        guard let token = OAuth2TokenStorage.shared.token else { return }
-        profileService.fetch(token: token) { [weak self] result in
+        guard let profile = profileService.profileUIModel else { return }
+        self.updateProfile(with: profile)
+        NotificationCenter.default.addObserver(
+            forName: ProfileImageService.didChangeNotification,
+            object: nil,
+            queue: .main,
+        ) {
+            [weak self] _ in
             guard let self = self else { return }
-            switch result {
-            case .success(_):
-                DispatchQueue.main.async {
-                    guard let profile = self.profileService.profileUIModel
-                    else { return }
-                    self.updateProfile(with: profile)
-                }
-            case .failure:
-                print("asdadsadsadasd")
-            }
-
+            self.updateAvatar()
         }
+        updateAvatar()
     }
 
     private func setUpUI() {
@@ -58,8 +57,17 @@ final class ProfileViewController: UIViewController {
     }
 
     private func updateProfile(with profile: ProfileUIModel) {
-        userNameLabel.text = profile.name
-        tagLabel.text = profile.loginName
-        statusLabel.text = profile.bio
+        userNameLabel.text = profile.name.isEmpty ? "Не указано" : profile.name
+        tagLabel.text =
+            profile.loginName.isEmpty ? "Не указано" : profile.loginName
+        statusLabel.text =
+            (profile.bio?.isEmpty ?? true) ? "Не указано" : profile.bio
+    }
+
+    private func updateAvatar() {
+        guard
+            let profileImageURL = ProfileImageService.shared.imageUrl,
+            let url = URL(string: profileImageURL)
+        else { return }
     }
 }

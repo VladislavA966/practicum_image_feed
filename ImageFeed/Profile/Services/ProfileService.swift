@@ -6,14 +6,29 @@ final class ProfileService {
     private let decoder = JSONDecoder()
     private var task: URLSessionTask?
     private(set) var profileUIModel: ProfileUIModel?
-    
+
     private init() {}
 
     func fetch(
-        token: String,
         completion: @escaping (Result<ProfileUIModel, Error>) -> Void
     ) {
         task?.cancel()
+
+        guard let token = OAuth2TokenStorage.shared.token else {
+            completion(
+                .failure(
+                    NSError(
+                        domain: "ProfileImageService",
+                        code: 401,
+                        userInfo: [
+                            NSLocalizedDescriptionKey:
+                                "Authorization token missing"
+                        ]
+                    )
+                )
+            )
+            return
+        }
 
         guard let request = makeProfileRequest(token: token) else {
             completion(.failure(URLError(.badURL)))
@@ -25,8 +40,13 @@ final class ProfileService {
             case .success(let data):
                 guard let self = self else { return }
                 do {
-                    let profileData = try self.decoder.decode(ProfileResultModel.self, from: data)
-                    let profileUIModel = ProfileUIModel.from(profileData: profileData)
+                    let profileData = try self.decoder.decode(
+                        ProfileResultModel.self,
+                        from: data
+                    )
+                    let profileUIModel = ProfileUIModel.from(
+                        profileData: profileData
+                    )
                     self.profileUIModel = profileUIModel
                     completion(.success(profileUIModel))
                 } catch {
@@ -48,7 +68,7 @@ final class ProfileService {
 
         var request = URLRequest(url: url)
         request.httpMethod = HTTPMethod.get
-        request.setValue("Bearer \(token)",forHTTPHeaderField: "Authorization")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         return request
     }
 }
