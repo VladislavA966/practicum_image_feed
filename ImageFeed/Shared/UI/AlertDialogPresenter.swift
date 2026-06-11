@@ -27,5 +27,13 @@ struct AlertDialogViewModel {
     let subTitle: String
     let actionTitle: String
     let action: () -> Void
-}
 
+    static func defaultError() -> AlertDialogViewModel {
+        AlertDialogViewModel(
+            title: "Что то пошло не так",
+            subTitle: "Попробуйте чуть позже",
+            actionTitle: "OK",
+            action: {}
+        )
+    }
+}

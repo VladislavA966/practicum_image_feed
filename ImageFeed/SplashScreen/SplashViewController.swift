@@ -1,17 +1,38 @@
 import UIKit
 
+private let imageName = "SplashScreenIcon"
+
 final class SplashViewController: UIViewController {
     let token = OAuth2TokenStorage.shared.token
+
+    let splashImageView: UIImageView = {
+        let imageView = UIImageView(image: UIImage(named: imageName))
+        imageView.contentMode = .scaleAspectFit
+        return imageView
+    }()
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.backgroundColor = .ypBlack
+        view.addSubview(splashImageView)
+        splashImageView.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            splashImageView.centerXAnchor.constraint(
+                equalTo: view.centerXAnchor
+            ),
+            splashImageView.centerYAnchor.constraint(
+                equalTo: view.centerYAnchor
+            ),
+        ])
+
+    }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         if token != nil {
             fetchProfileData()
         } else {
-            performSegue(
-                withIdentifier: Constants.authFlowIdentifier,
-                sender: nil
-            )
+            presentAuthViewController()
         }
     }
 
@@ -27,8 +48,7 @@ final class SplashViewController: UIViewController {
                     ) { _ in }
                     self.switchToTabBarController()
                 case .failure(_):
-                    ///TODO: Показать сообщение об ошибке
-                    print("asdadasd")
+                    AlertDialogPresenter.show(vc: self, model: .defaultError())
                     break
                 }
             }
@@ -48,24 +68,20 @@ final class SplashViewController: UIViewController {
 
         window.rootViewController = tabBarController
     }
-}
 
-extension SplashViewController {
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        if segue.identifier == Constants.authFlowIdentifier {
-            guard
-                let navigationController = segue.destination
-                    as? UINavigationController,
-                let authViewController = navigationController.viewControllers
-                    .first as? AuthViewController
-            else {
-                assertionFailure(
-                    "Failed to prepare for \(Constants.authFlowIdentifier)"
-                )
-                return
-            }
-            authViewController.delegate = self
+    private func presentAuthViewController() {
+        let storyboard = UIStoryboard(name: "Main", bundle: .main)
+        guard
+            let authViewController = storyboard.instantiateViewController(
+                withIdentifier: "AuthViewController"
+            ) as? AuthViewController
+        else {
+            assertionFailure("Invalid view controller configuration")
+            return
         }
+        authViewController.delegate = self
+        authViewController.modalPresentationStyle = .fullScreen
+        present(authViewController, animated: true, completion: nil)
     }
 }
 
