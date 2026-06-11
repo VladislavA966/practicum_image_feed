@@ -7,7 +7,6 @@ enum AuthServiceError: Error {
 final class OAuth2Service {
     static let shared = OAuth2Service()
     private let tokenStorage = OAuth2TokenStorage.shared
-    private let decoder = JSONDecoder()
     private let urlSession = URLSession.shared
     private var task: URLSessionTask?
     private var lastCode: String?
@@ -39,26 +38,18 @@ final class OAuth2Service {
             return
         }
 
-        let task = urlSession.data(for: request) { result in
-            DispatchQueue.main.async {
-                switch result {
-                case .success(let data):
-                    do {
-                        let body = try self.decoder.decode(
-                            OAuthTokenResponseModel.self,
-                            from: data
-                        )
-                        OAuth2TokenStorage.shared.token = body.accessToken
-                        completion(.success(body.accessToken))
-                    } catch {
-                        completion(.failure(NetworkError.decodingError(error)))
-                    }
-                case .failure(let error):
-                    completion(.failure(error))
-                }
-                self.task = nil
-                self.lastCode = nil
+        let task = urlSession.objectTask(for: request) {
+            [weak self] (result: Result<OAuthTokenResponseModel, Error>) in
+            guard let self else { return }
+            switch result {
+            case .success(let body):
+                self.authToken = body.accessToken
+                completion(.success(body.accessToken))
+            case .failure(let error):
+                completion(.failure(error))
             }
+            self.task = nil
+            self.lastCode = nil
         }
         self.task = task
         task.resume()

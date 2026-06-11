@@ -2,7 +2,7 @@ import UIKit
 
 final class AvatarView: UIView {
     private let avatarImageName = "ProfileAvatarImage"
-    private let avatarImageView = UIImageView()
+    let avatarImageView = UIImageView()
     
     override init(frame: CGRect) {
         super.init(frame: frame)

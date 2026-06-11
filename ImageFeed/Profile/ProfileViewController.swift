@@ -1,3 +1,4 @@
+import Kingfisher
 import UIKit
 
 final class ProfileViewController: UIViewController {
@@ -69,5 +70,27 @@ final class ProfileViewController: UIViewController {
             let profileImageURL = ProfileImageService.shared.imageUrl,
             let url = URL(string: profileImageURL)
         else { return }
+        let placeholderImage = UIImage(systemName: "person.circle.fill")?
+            .withTintColor(.lightGray, renderingMode: .alwaysOriginal)
+            .withConfiguration(
+                UIImage.SymbolConfiguration(
+                    pointSize: 70,
+                    weight: .regular,
+                    scale: .large
+                )
+            )
+        let processor = RoundCornerImageProcessor(cornerRadius: 35)
+        avatarImageAndLogoutButtonStackView.avatarView.avatarImageView.kf
+            .indicatorType = .activity
+        avatarImageAndLogoutButtonStackView.avatarView.avatarImageView.kf
+            .setImage(
+                with: url,
+                placeholder: placeholderImage,
+                options: [
+                    .processor(processor),
+                    .scaleFactor(UIScreen.main.scale),
+                    .cacheOriginalImage,
+                ]
+            )
     }
 }

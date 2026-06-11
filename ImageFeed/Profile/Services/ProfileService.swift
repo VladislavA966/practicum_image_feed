@@ -35,23 +35,16 @@ final class ProfileService {
             return
         }
 
-        let task = urlSession.data(for: request) { [weak self] result in
+        let task = urlSession.objectTask(for: request) {
+            [weak self] (result: Result<ProfileResultModel, Error>) in
             switch result {
-            case .success(let data):
+            case .success(let profileData):
                 guard let self = self else { return }
-                do {
-                    let profileData = try self.decoder.decode(
-                        ProfileResultModel.self,
-                        from: data
-                    )
-                    let profileUIModel = ProfileUIModel.from(
-                        profileData: profileData
-                    )
-                    self.profileUIModel = profileUIModel
-                    completion(.success(profileUIModel))
-                } catch {
-                    completion(.failure(error))
-                }
+                let profileUIModel = ProfileUIModel.from(
+                    profileData: profileData
+                )
+                self.profileUIModel = profileUIModel
+                completion(.success(profileUIModel))
             case .failure(let error):
                 completion(.failure(error))
                 print("Error \(error)")

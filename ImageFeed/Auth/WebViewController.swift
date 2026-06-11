@@ -9,23 +9,21 @@ final class WebViewViewController: UIViewController {
     
     @IBOutlet private weak var progressView: UIProgressView!
     
+    private var progressEstimateObserver: NSKeyValueObservation?
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         webView.navigationDelegate = self
         configureBackButton()
         loadAuthView()
+        progressEstimateObserver = webView.observe(\.estimatedProgress, options: [], changeHandler: {
+            [weak self] _, _ in
+            guard let self = self else { return }
+            self.updateProgress()
+        })
     }
     
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        webView.addObserver(self, forKeyPath: #keyPath(WKWebView.estimatedProgress), options: .new, context: nil)
-    }
-    
-    override func viewDidDisappear(_ animated: Bool) {
-        super.viewDidDisappear(animated)
-        webView.removeObserver(self, forKeyPath: #keyPath(WKWebView.estimatedProgress))
-    }
-    
+
     private func configureBackButton() {
         navigationController?.navigationBar.backIndicatorImage = .backIcon
         navigationController?.navigationBar.backIndicatorTransitionMaskImage = .backIcon

@@ -37,27 +37,19 @@ final class ProfileImageService {
         guard let request = makeProfileImageRequest(name: name, token: token)
         else { return }
 
-        let task = urlSession.data(for: request) { [weak self] result in
+        let task = urlSession.objectTask(for: request) {
+            [weak self] (result: Result<ProfileImageResultModel, Error>) in
             switch result {
-            case .success(let data):
+            case .success(let profileImageData):
                 guard let self = self else { return }
-                do {
-                    let profileImageData = try self.decoder.decode(
-                        ProfileImageResultModel.self,
-                        from: data
+                self.imageUrl = profileImageData.small
+                completion(.success(profileImageData.small))
+                NotificationCenter.default
+                    .post(
+                        name: ProfileImageService.didChangeNotification,
+                        object: self,
+                        userInfo: ["URL": self.imageUrl ?? ""]
                     )
-                    self.imageUrl = profileImageData.small
-                    completion(.success(profileImageData.small))
-                    NotificationCenter.default
-                        .post(
-                            name: ProfileImageService.didChangeNotification,
-                            object: self,
-                            userInfo: ["URL": self.imageUrl ?? ""]
-                        )
-                } catch {
-                    print("adadadasda")
-                    completion(.failure(error))
-                }
             case .failure(let error):
                 completion(.failure(error))
             }
