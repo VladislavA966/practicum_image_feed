@@ -1,13 +1,17 @@
 import ProgressHUD
 import UIKit
 
+protocol AuthViewControllerDelegate: AnyObject {
+    func didAuthenticate(_ vc: AuthViewController)
+}
+
 final class AuthViewController: UIViewController {
     weak var delegate: AuthViewControllerDelegate?
 
     private let loginButton = LoginButton()
     private let logoImage = UIImageView(image: UIImage(named: "AuthLogo"))
 
-    private let oauth2Service = OAuth2Service.shared
+    private let tokenService = OAuth2Service.shared
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -63,7 +67,7 @@ extension AuthViewController: WebViewViewControllerDelegate {
 
         UIBlockingProgressHUD.show()
 
-        oauth2Service.fetchOAuthToken(
+        tokenService.fetchOAuthToken(
             code: code,
             { result in
                 UIBlockingProgressHUD.dismiss()
@@ -82,8 +86,4 @@ extension AuthViewController: WebViewViewControllerDelegate {
         dismiss(animated: true)
     }
 
-}
-
-protocol AuthViewControllerDelegate: AnyObject {
-    func didAuthenticate(_ vc: AuthViewController)
 }

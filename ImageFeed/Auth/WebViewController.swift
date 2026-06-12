@@ -19,41 +19,10 @@ final class WebViewViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        webView.navigationDelegate = self
-        view.addSubview(webView)
-        view.addSubview(progressView)
-        webView.backgroundColor = .ypWhite
-        webView.translatesAutoresizingMaskIntoConstraints = false
-        progressView.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            webView.topAnchor.constraint(
-                equalTo: view.safeAreaLayoutGuide.topAnchor
-            ),
-            webView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            webView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            webView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            progressView.topAnchor.constraint(
-                equalTo: view.safeAreaLayoutGuide.topAnchor
-            ),
-            progressView.leadingAnchor.constraint(
-                equalTo: view.safeAreaLayoutGuide.leadingAnchor
-            ),
-            progressView.trailingAnchor.constraint(
-                equalTo: view.safeAreaLayoutGuide.trailingAnchor
-            ),
-
-        ])
-        configureBackButton()
+        setupUI()
+        setupConstraints()
+        setupObservers()
         loadAuthView()
-        progressEstimateObserver = webView.observe(
-            \.estimatedProgress,
-            options: [],
-            changeHandler: {
-                [weak self] _, _ in
-                guard let self = self else { return }
-                self.updateProgress()
-            }
-        )
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -61,10 +30,45 @@ final class WebViewViewController: UIViewController {
         navigationController?.setAppearance(with: .ypWhite)
     }
 
+    // MARK: - Setup
+
+    private func setupUI() {
+        webView.navigationDelegate = self
+        webView.backgroundColor = .ypWhite
+        view.addSubview(webView)
+        view.addSubview(progressView)
+        configureBackButton()
+    }
+
+    private func setupConstraints() {
+        webView.translatesAutoresizingMaskIntoConstraints = false
+        progressView.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            webView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            webView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            webView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            webView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            progressView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            progressView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+            progressView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
+        ])
+    }
+
+    private func setupObservers() {
+        progressEstimateObserver = webView.observe(
+            \.estimatedProgress,
+            options: [],
+            changeHandler: { [weak self] _, _ in
+                self?.updateProgress()
+            }
+        )
+    }
+
+    // MARK: - Private
+
     private func configureBackButton() {
         navigationController?.navigationBar.backIndicatorImage = .backIcon
-        navigationController?.navigationBar.backIndicatorTransitionMaskImage =
-            .backIcon
+        navigationController?.navigationBar.backIndicatorTransitionMaskImage = .backIcon
         navigationItem.backBarButtonItem = UIBarButtonItem(
             title: "",
             style: .plain,
@@ -75,10 +79,7 @@ final class WebViewViewController: UIViewController {
     }
 
     private func loadAuthView() {
-        guard
-            var urlComponents = URLComponents(
-                string: WebViewConstants.unsplashAuthorizeURLString
-            )
+        guard var urlComponents = URLComponents(string: WebViewConstants.unsplashAuthorizeURLString)
         else { return }
 
         urlComponents.queryItems = [
@@ -89,26 +90,7 @@ final class WebViewViewController: UIViewController {
         ]
 
         guard let url = urlComponents.url else { return }
-        let request = URLRequest(url: url)
-        webView.load(request)
-    }
-
-    override func observeValue(
-        forKeyPath keyPath: String?,
-        of object: Any?,
-        change: [NSKeyValueChangeKey: Any]?,
-        context: UnsafeMutableRawPointer?
-    ) {
-        if keyPath == #keyPath(WKWebView.estimatedProgress) {
-            updateProgress()
-        } else {
-            super.observeValue(
-                forKeyPath: keyPath,
-                of: object,
-                change: change,
-                context: context
-            )
-        }
+        webView.load(URLRequest(url: url))
     }
 
     private func updateProgress() {
@@ -116,6 +98,8 @@ final class WebViewViewController: UIViewController {
         progressView.isHidden = fabs(webView.estimatedProgress - 1.0) <= 0.0001
     }
 }
+
+// MARK: - WKNavigationDelegate
 
 extension WebViewViewController: WKNavigationDelegate {
     func webView(
@@ -132,23 +116,21 @@ extension WebViewViewController: WKNavigationDelegate {
     }
 
     private func code(from navigationAction: WKNavigationAction) -> String? {
-        if let url = navigationAction.request.url,
+        guard
+            let url = navigationAction.request.url,
             let urlComponents = URLComponents(string: url.absoluteString),
             urlComponents.path == "/oauth/authorize/native",
             let items = urlComponents.queryItems,
             let codeItem = items.first(where: { $0.name == "code" })
-        {
-            return codeItem.value
-        } else {
-            return nil
-        }
+        else { return nil }
+
+        return codeItem.value
     }
 }
 
+// MARK: - WebViewViewControllerDelegate
+
 protocol WebViewViewControllerDelegate: AnyObject {
-    func webViewViewController(
-        _ vc: WebViewViewController,
-        didAuthenticateWithCode code: String
-    )
+    func webViewViewController(_ vc: WebViewViewController, didAuthenticateWithCode code: String)
     func webViewViewControllerDidCancel(_ vc: WebViewViewController)
 }
