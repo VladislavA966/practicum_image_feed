@@ -38,12 +38,12 @@ final class ProfileImageService {
         else { return }
 
         let task = urlSession.objectTask(for: request) {
-            [weak self] (result: Result<ProfileImageResultModel, Error>) in
+            [weak self] (result: Result<UserResultModel, Error>) in
             switch result {
-            case .success(let profileImageData):
+            case .success(let userResultModel):
                 guard let self = self else { return }
-                self.imageUrl = profileImageData.small
-                completion(.success(profileImageData.small))
+                self.imageUrl = userResultModel.profileImage.small
+                completion(.success(userResultModel.profileImage.small))
                 NotificationCenter.default
                     .post(
                         name: ProfileImageService.didChangeNotification,

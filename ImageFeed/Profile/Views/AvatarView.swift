@@ -18,6 +18,8 @@ final class AvatarView: UIView {
         addSubview(avatarImageView)
         avatarImageView.image = UIImage(named: avatarImageName)
         avatarImageView.contentMode = .scaleAspectFill
+        avatarImageView.layer.cornerRadius = 35
+        avatarImageView.clipsToBounds = true
         avatarImageView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
             avatarImageView.widthAnchor.constraint(equalToConstant: 70),

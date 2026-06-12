@@ -1,7 +1,6 @@
 import ProgressHUD
 import UIKit
 
-///TODO: Перенести картинку и кнопку на верстку кодом
 final class AuthViewController: UIViewController {
     weak var delegate: AuthViewControllerDelegate?
 
@@ -40,22 +39,10 @@ final class AuthViewController: UIViewController {
         }
     }
 
-//    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-//        if segue.identifier == Constants.webViewSegueIdentifier {
-//            guard
-//                let webViewViewController = segue.destination
-//                    as? WebViewViewController
-//            else {
-//                assertionFailure(
-//                    "Failed to prepare for \(Constants.webViewSegueIdentifier)"
-//                )
-//                return
-//            }
-//            webViewViewController.delegate = self
-//        } else {
-//            super.prepare(for: segue, sender: sender)
-//        }
-//    }
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        navigationController?.setAppearance(with: .ypBlack)
+    }
 
     private func didTapLogin() {
         let webViewController = WebViewViewController()

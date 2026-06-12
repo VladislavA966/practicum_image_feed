@@ -10,6 +10,8 @@ extension URLSession {
             switch result {
             case .success(let data):
                 do {
+                    let json = String(data: data, encoding: .utf8)
+                    print(json ?? "Нет данных")
                     let object = try decoder.decode(T.self, from: data)
                     completion(.success(object))
                 } catch {

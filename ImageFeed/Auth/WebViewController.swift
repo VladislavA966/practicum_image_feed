@@ -1,7 +1,6 @@
 import UIKit
 import WebKit
 
-///TODO: Перенести веб вью и индикатор на верстку кодом
 final class WebViewViewController: UIViewController {
     weak var delegate: WebViewViewControllerDelegate?
 
@@ -55,6 +54,11 @@ final class WebViewViewController: UIViewController {
                 self.updateProgress()
             }
         )
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        navigationController?.setAppearance(with: .ypWhite)
     }
 
     private func configureBackButton() {

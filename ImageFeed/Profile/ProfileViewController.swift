@@ -29,6 +29,7 @@ final class ProfileViewController: UIViewController {
 
     private func setUpUI() {
         let mainStackView = UIStackView()
+        view.backgroundColor = .ypBlack
         mainStackView.axis = .vertical
         mainStackView.spacing = 8
         mainStackView.alignment = .leading
