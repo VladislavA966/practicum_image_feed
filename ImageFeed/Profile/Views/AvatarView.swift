@@ -2,7 +2,7 @@ import UIKit
 
 final class AvatarView: UIView {
     private let avatarImageName = "ProfileAvatarImage"
-    private let avatarImageView = UIImageView()
+    let avatarImageView = UIImageView()
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -18,6 +18,8 @@ final class AvatarView: UIView {
         addSubview(avatarImageView)
         avatarImageView.image = UIImage(named: avatarImageName)
         avatarImageView.contentMode = .scaleAspectFill
+        avatarImageView.layer.cornerRadius = 35
+        avatarImageView.clipsToBounds = true
         avatarImageView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
             avatarImageView.widthAnchor.constraint(equalToConstant: 70),

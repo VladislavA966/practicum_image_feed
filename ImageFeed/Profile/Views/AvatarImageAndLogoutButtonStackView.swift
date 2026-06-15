@@ -1,7 +1,8 @@
 import UIKit
+import Kingfisher
 
 final class AvatarImageAndLogoutButtonStackView: UIStackView {
-    private let avatarView = AvatarView()
+    let avatarView = AvatarView()
     private let logoutButton = LogoutButton()
     
     override init(frame: CGRect) {
