@@ -1,5 +1,4 @@
 import UIKit
-import Kingfisher
 
 final class AvatarImageAndLogoutButtonStackView: UIStackView {
     let avatarView = AvatarView()

@@ -1,17 +1,25 @@
-//
-//  ImageFeedTests.swift
-//  ImageFeedTests
-//
-//  Created by Владислав Афонин on 6/5/26.
-//
+import XCTest
 
-import Testing
 @testable import ImageFeed
 
-struct ImageFeedTests {
+final class ImagesListServiceTests: XCTestCase {
+    func testFetchPhotos() {
+        let service = ImageListService.shared
+        let exp = expectation(description: "Wait for Notification")
 
-    @Test func example() async throws {
-        // Write your test here and use APIs like `#expect(...)` to check expected conditions.
+        NotificationCenter.default.addObserver(
+            forName: ImageListService.didChangeNotification,
+            object: nil,
+            queue: .main
+        ) { _ in
+            exp.fulfill()
+        }
+
+        service.fetchPhotosNextPage() {_ in }
+        wait(for: [exp], timeout: 10)
+
+        XCTAssertEqual(service.photos.count, 10)
+
     }
 
 }
