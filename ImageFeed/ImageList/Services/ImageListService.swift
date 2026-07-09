@@ -5,6 +5,9 @@ final class ImageListService {
     static let didChangeNotification = Notification.Name(
         rawValue: "ImagesListServiceDidChange"
     )
+    static let didFaultNotification = Notification.Name(
+        rawValue: "ImagesListServiceDidFault"
+    )
     private let urlSession = URLSession.shared
     private let decoder: JSONDecoder = {
         let decoder = JSONDecoder()
@@ -19,15 +22,11 @@ final class ImageListService {
 
     private init() {}
 
-    func fetchPhotosNextPage(
-        completion: @escaping (Result<[PhotoUIModel], Error>) -> Void
-    ) {
+    func fetchPhotosNextPage() {
         let nextPage = (lastLoadedPage ?? 0) + 1
-
         guard task == nil else { return }
 
         guard let request = makeImageListRequest(page: nextPage) else {
-            completion(.failure(URLError(.badURL)))
             return
         }
 
@@ -37,25 +36,28 @@ final class ImageListService {
             defer { self.task = nil }
             switch result {
             case .success(let photoResults):
-                let newPhotos = photoResults.map {
-                    PhotoUIModel.init(from: $0)
-                }
+                let newPhotos = photoResults.map { PhotoUIModel(from: $0) }
                 self.photos.append(contentsOf: newPhotos)
-                NotificationCenter.default.post(
-                    name: ImageListService.didChangeNotification,
-                    object: self
-                )
-                lastLoadedPage = nextPage
+                self.lastLoadedPage = nextPage
+                DispatchQueue.main.async {
+                    NotificationCenter.default.post(
+                        name: ImageListService.didChangeNotification,
+                        object: self
+                    )
+                }
 
             case .failure(let error):
-                completion(.failure(error))
-
+                print("fetchPhotosNextPage error: \(error)")
+                DispatchQueue.main.async {
+                    NotificationCenter.default.post(
+                        name: ImageListService.didFaultNotification,
+                        object: self
+                    )
+                }
             }
-
         }
         self.task = task
         task.resume()
-
     }
 
     private func makeImageListRequest(page: Int, perPage: Int = 10)
@@ -86,6 +88,29 @@ final class ImageListService {
             )
         }
 
+        return request
+    }
+
+    private func makeLikesUrlRequest(
+        imageId: String,
+        isLiked: Bool,
+        token: String
+    ) -> URLRequest? {
+        guard
+            let url = URL(
+                string: "https://api.unsplash.com/photos/\(imageId)/likes"
+            )
+        else { return nil }
+        var request = URLRequest(url: url)
+        if isLiked {
+            request.httpMethod = HTTPMethod.delete
+        } else {
+            request.httpMethod = HTTPMethod.post
+        }
+        request.setValue(
+            "Bearer \(token)",
+            forHTTPHeaderField: "Authorization"
+        )
         return request
     }
 }
