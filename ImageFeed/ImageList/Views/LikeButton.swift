@@ -11,4 +11,8 @@ final class LikeButton: UIButton {
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
+    
+    func setLiked(_ isLiked: Bool) {
+        tintColor = isLiked ? UIColor.red : .white.withAlphaComponent(0.5)
+        }
 }

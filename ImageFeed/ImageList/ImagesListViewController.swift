@@ -71,13 +71,11 @@ final class ImagesListViewController: UIViewController {
     private func setUpCell(for cell: ImageListCell, with indexPath: IndexPath) {
         let photo = photos[indexPath.row]
         guard let imageUrl = URL(string: photo.thumbImageURL)
-        else {
-            return
-        }
-
+        else { return }
         cell.configureCell(
             imageURL: imageUrl,
-            date: dateFormatter.string(from: photo.createdAt ?? Date())
+            date: dateFormatter.string(from: photo.createdAt ?? Date()),
+            isLiked: photo.isLiked
         )
     }
 
@@ -157,6 +155,7 @@ extension ImagesListViewController: UITableViewDataSource {
             return UITableViewCell()
         }
         setUpCell(for: imageListCell, with: indexPath)
+        imageListCell.delegate = self
         return imageListCell
     }
 
@@ -167,6 +166,36 @@ extension ImagesListViewController: UITableViewDataSource {
     ) {
         if indexPath.row == photos.count - 1 {
             imageListService.fetchPhotosNextPage()
+        }
+    }
+}
+
+extension ImagesListViewController: ImageListCellDelegate {
+    func didTapLikeButton(_ cell: ImageListCell) {
+        print("Принт нажатия из делегата")
+        guard let indexPath = imageTableView.indexPath(for: cell) else {
+            return
+        }
+        let photo = photos[indexPath.row]
+        UIBlockingProgressHUD.show()
+        imageListService.changeLike(photoId: photo.id, isLiked: !photo.isLiked)
+        { result in
+            switch result {
+            case .success:
+                DispatchQueue.main.async {
+                    self.photos = self.imageListService.photos
+                    cell.setIsLiked(!photo.isLiked)
+                    UIBlockingProgressHUD.dismiss()
+                }
+            case .failure:
+                DispatchQueue.main.async {
+                    UIBlockingProgressHUD.dismiss()
+                    AlertDialogPresenter.show(
+                        vc: self,
+                        model: AlertDialogViewModel.defaultError()
+                    )
+                }
+            }
         }
     }
 }

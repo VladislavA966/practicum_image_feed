@@ -1,6 +1,10 @@
 import Kingfisher
 import UIKit
 
+protocol ImageListCellDelegate: AnyObject {
+    func didTapLikeButton(_ cell: ImageListCell)
+}
+
 final class ImageListCell: UITableViewCell {
     static let reuseId = "ImageListCell"
 
@@ -14,6 +18,8 @@ final class ImageListCell: UITableViewCell {
     private let likeButton = LikeButton()
 
     private let gradientLayer = CAGradientLayer()
+    
+    weak var delegate: ImageListCellDelegate?
 
     // MARK: - Init
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
@@ -32,7 +38,7 @@ final class ImageListCell: UITableViewCell {
         super.layoutSubviews()
         gradientLayer.frame = gradientView.bounds
     }
-    
+
     override func prepareForReuse() {
         super.prepareForReuse()
         cellImage.kf.cancelDownloadTask()
@@ -43,9 +49,15 @@ final class ImageListCell: UITableViewCell {
         contentView.addSubview(cellImage)
         contentView.addSubview(gradientView)
         contentView.addSubview(likeButton)
+        likeButton.addTarget(self, action: #selector(likeButtonTapped), for: .touchUpInside)
         gradientView.addSubview(dateLabel)
         setupGradientLayer()
         setupConstraints()
+    }
+    
+    @objc private func likeButtonTapped() {
+         print("Принт нажатия из ячейки")
+        delegate?.didTapLikeButton(self)
     }
 
     private func setupConstraints() {
@@ -123,14 +135,19 @@ final class ImageListCell: UITableViewCell {
     }
 
     // MARK: - Configure
-    func configureCell(imageURL: URL, date: String) {
+    func configureCell(imageURL: URL, date: String, isLiked: Bool) {
         ///TODO: Настроить плейсхолдер
         cellImage.kf.indicatorType = .activity
         cellImage.kf.setImage(
             with: imageURL,
-//                        placeholder: placeholderImage,
+            //                        placeholder: placeholderImage,
         )
         dateLabel.text = date
+        likeButton.setLiked(isLiked)
     }
     
+    func setIsLiked(_ isLiked: Bool) {
+        likeButton.setLiked(isLiked)
+    }
+
 }

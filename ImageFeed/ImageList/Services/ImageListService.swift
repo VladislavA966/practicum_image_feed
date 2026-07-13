@@ -15,6 +15,7 @@ final class ImageListService {
         return decoder
     }()
     private var task: URLSessionTask?
+    private var likeTask: URLSessionTask?
 
     private(set) var photos: [PhotoUIModel] = []
 
@@ -46,8 +47,7 @@ final class ImageListService {
                     )
                 }
 
-            case .failure(let error):
-                print("fetchPhotosNextPage error: \(error)")
+            case .failure(_):
                 DispatchQueue.main.async {
                     NotificationCenter.default.post(
                         name: ImageListService.didFaultNotification,
@@ -58,6 +58,73 @@ final class ImageListService {
         }
         self.task = task
         task.resume()
+    }
+
+    func changeLike(
+        photoId: String,
+        isLiked: Bool,
+        completion: @escaping (Result<Void, Error>) -> Void
+    ) {
+        likeTask?.cancel()
+        guard let token = OAuth2TokenStorage.shared.token else {
+            completion(
+                .failure(
+                    NSError(
+                        domain: "ProfileImageService",
+                        code: 401,
+                        userInfo: [
+                            NSLocalizedDescriptionKey:
+                                "Authorization token missing"
+                        ]
+                    )
+                )
+            )
+            return
+        }
+
+        guard
+            let request = makeLikesUrlRequest(
+                photoId: photoId,
+                isLiked: isLiked,
+                token: token
+            )
+        else {
+            DispatchQueue.main.async {
+                completion(.failure(URLError(.badURL)))
+            }
+            return
+        }
+
+        let task = urlSession.data(for: request) { [weak self] result in
+            guard let self else { return }
+            DispatchQueue.main.async {
+                switch result {
+                case .success:
+                    print("Запрос прошел успешно")
+                    if let index = self.photos.firstIndex(where: {
+                        $0.id == photoId
+                    }) {
+                        let photo = self.photos[index]
+                        self.photos[index] = PhotoUIModel(
+                            id: photo.id,
+                            size: photo.size,
+                            createdAt: photo.createdAt,
+                            welcomeDescription: photo.welcomeDescription,
+                            thumbImageURL: photo.thumbImageURL,
+                            largeImageURL: photo.largeImageURL,
+                            isLiked: isLiked
+                        )
+                    }
+                    completion(.success(()))
+                case .failure(let error):
+                    print("Ошибка лайка \(error)")
+                    completion(.failure(error))
+                }
+            }
+        }
+        self.likeTask = task
+        task.resume()
+
     }
 
     private func makeImageListRequest(page: Int, perPage: Int = 10)
@@ -92,21 +159,21 @@ final class ImageListService {
     }
 
     private func makeLikesUrlRequest(
-        imageId: String,
+        photoId: String,
         isLiked: Bool,
         token: String
     ) -> URLRequest? {
         guard
             let url = URL(
-                string: "https://api.unsplash.com/photos/\(imageId)/likes"
+                string: Constants.defaultBaseURLString
+                    + "/photos/\(photoId)/like"
             )
         else { return nil }
         var request = URLRequest(url: url)
-        if isLiked {
-            request.httpMethod = HTTPMethod.delete
-        } else {
-            request.httpMethod = HTTPMethod.post
-        }
+        print("Состояние которое мы передаем в запрос: \(isLiked)")
+        request.httpMethod = isLiked ? HTTPMethod.post : HTTPMethod.delete
+        print("Метод запроса \(request.httpMethod ?? "ПУСТО")")
+        
         request.setValue(
             "Bearer \(token)",
             forHTTPHeaderField: "Authorization"
