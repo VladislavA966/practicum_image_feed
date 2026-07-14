@@ -13,6 +13,6 @@ final class LikeButton: UIButton {
     }
     
     func setLiked(_ isLiked: Bool) {
-        tintColor = isLiked ? UIColor.red : .white.withAlphaComponent(0.5)
+        tintColor = isLiked ? .ypRed : .white.withAlphaComponent(0.5)
         }
 }

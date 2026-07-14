@@ -9,14 +9,6 @@ final class ImagesListViewController: UIViewController {
 
     private var photos: [PhotoUIModel] = []
 
-    private lazy var dateFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .long
-        formatter.timeStyle = .none
-        formatter.locale = Locale(identifier: "ru_RU")
-        return formatter
-    }()
-
     private let imageTableView = UITableView()
 
     override func viewDidLoad() {
@@ -74,7 +66,7 @@ final class ImagesListViewController: UIViewController {
         else { return }
         cell.configureCell(
             imageURL: imageUrl,
-            date: dateFormatter.string(from: photo.createdAt ?? Date()),
+            date: photo.createdAt?.longDateString ?? "",
             isLiked: photo.isLiked
         )
     }
@@ -115,12 +107,12 @@ extension ImagesListViewController: UITableViewDelegate {
         _ tableView: UITableView,
         didSelectRowAt indexPath: IndexPath
     ) {
-        //        let singleImageVC = SingleImageViewController()
-        //        let photo = photos[indexPath.row]
-        //        guard let imageUrl = URL(string: photo.largeImageURL) else { return }
-        //        singleImageVC.image = UIImage(named: photo.largeImageURL)
-        //        singleImageVC.modalPresentationStyle = .fullScreen
-        //        present(singleImageVC, animated: true)
+        let singleImageVC = SingleImageViewController()
+        let photo = photos[indexPath.row]
+        guard let imageUrl = URL(string: photo.largeImageURL) else { return }
+        singleImageVC.fullImageURL = imageUrl
+        singleImageVC.modalPresentationStyle = .fullScreen
+        present(singleImageVC, animated: true)
     }
 
     func tableView(

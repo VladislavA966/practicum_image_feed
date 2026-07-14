@@ -173,11 +173,16 @@ final class ImageListService {
         print("Состояние которое мы передаем в запрос: \(isLiked)")
         request.httpMethod = isLiked ? HTTPMethod.post : HTTPMethod.delete
         print("Метод запроса \(request.httpMethod ?? "ПУСТО")")
-        
+
         request.setValue(
             "Bearer \(token)",
             forHTTPHeaderField: "Authorization"
         )
         return request
+    }
+
+    func clearData() {
+        task = nil
+        photos = []
     }
 }

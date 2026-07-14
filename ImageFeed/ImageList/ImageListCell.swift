@@ -18,7 +18,7 @@ final class ImageListCell: UITableViewCell {
     private let likeButton = LikeButton()
 
     private let gradientLayer = CAGradientLayer()
-    
+
     weak var delegate: ImageListCellDelegate?
 
     // MARK: - Init
@@ -49,14 +49,18 @@ final class ImageListCell: UITableViewCell {
         contentView.addSubview(cellImage)
         contentView.addSubview(gradientView)
         contentView.addSubview(likeButton)
-        likeButton.addTarget(self, action: #selector(likeButtonTapped), for: .touchUpInside)
+        likeButton.addTarget(
+            self,
+            action: #selector(likeButtonTapped),
+            for: .touchUpInside
+        )
         gradientView.addSubview(dateLabel)
         setupGradientLayer()
         setupConstraints()
     }
-    
+
     @objc private func likeButtonTapped() {
-         print("Принт нажатия из ячейки")
+        print("Принт нажатия из ячейки")
         delegate?.didTapLikeButton(self)
     }
 
@@ -136,16 +140,16 @@ final class ImageListCell: UITableViewCell {
 
     // MARK: - Configure
     func configureCell(imageURL: URL, date: String, isLiked: Bool) {
-        ///TODO: Настроить плейсхолдер
+        let placeholderImage = UIImage(named: "ImageListPlaceHolder")
         cellImage.kf.indicatorType = .activity
         cellImage.kf.setImage(
             with: imageURL,
-            //                        placeholder: placeholderImage,
+            placeholder: placeholderImage,
         )
         dateLabel.text = date
         likeButton.setLiked(isLiked)
     }
-    
+
     func setIsLiked(_ isLiked: Bool) {
         likeButton.setLiked(isLiked)
     }
