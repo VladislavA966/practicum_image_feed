@@ -75,4 +75,9 @@ final class ProfileImageService {
         )
         return urlRequest
     }
+
+    func clearImageData() {
+        imageUrl = nil
+        task = nil
+    }
 }

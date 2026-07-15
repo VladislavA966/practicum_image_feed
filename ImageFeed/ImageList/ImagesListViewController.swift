@@ -1,16 +1,13 @@
+import ProgressHUD
 import UIKit
 
 final class ImagesListViewController: UIViewController {
 
-    private let photosName: [String] = Array(0..<20).map { "\($0)" }
+    private var isFirstLoadData = true
 
-    private lazy var dateFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .long
-        formatter.timeStyle = .none
-        formatter.locale = Locale(identifier: "ru_RU")
-        return formatter
-    }()
+    private let imageListService = ImageListService.shared
+
+    private var photos: [PhotoUIModel] = []
 
     private let imageTableView = UITableView()
 
@@ -18,6 +15,20 @@ final class ImagesListViewController: UIViewController {
         super.viewDidLoad()
         view.backgroundColor = .ypBlack
         setUpTableView()
+        UIBlockingProgressHUD.show()
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(updateTableViewAnimated),
+            name: ImageListService.didChangeNotification,
+            object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(didFailure),
+            name: ImageListService.didFaultNotification,
+            object: nil
+        )
+        imageListService.fetchPhotosNextPage()
     }
 
     private func setUpTableView() {
@@ -50,17 +61,45 @@ final class ImagesListViewController: UIViewController {
     }
 
     private func setUpCell(for cell: ImageListCell, with indexPath: IndexPath) {
-        let imageName = photosName[indexPath.row]
-
-        guard let image = UIImage(named: imageName) else { return }
-
+        let photo = photos[indexPath.row]
+        guard let imageUrl = URL(string: photo.thumbImageURL)
+        else { return }
         cell.configureCell(
-            image: image,
-            date: dateFormatter.string(from: Date())
+            imageURL: imageUrl,
+            date: photo.createdAt?.longDateString ?? "",
+            isLiked: photo.isLiked
         )
-
     }
 
+    @objc private func updateTableViewAnimated() {
+        if isFirstLoadData {
+            UIBlockingProgressHUD.dismiss()
+            isFirstLoadData = false
+        }
+        let oldCount = photos.count
+        photos = imageListService.photos
+        let newCount = photos.count
+        imageTableView.performBatchUpdates {
+            let indexPaths = (oldCount..<newCount).map {
+                IndexPath(row: $0, section: 0)
+            }
+            self.imageTableView.insertRows(
+                at: indexPaths,
+                with: .automatic
+            )
+        }
+    }
+
+    @objc private func didFailure() {
+        if isFirstLoadData {
+            UIBlockingProgressHUD.dismiss()
+            isFirstLoadData = false
+        }
+        AlertDialogPresenter.show(
+            vc: self,
+            model: AlertDialogViewModel.defaultError()
+        )
+    }
 }
 
 extension ImagesListViewController: UITableViewDelegate {
@@ -69,7 +108,9 @@ extension ImagesListViewController: UITableViewDelegate {
         didSelectRowAt indexPath: IndexPath
     ) {
         let singleImageVC = SingleImageViewController()
-        singleImageVC.image = UIImage(named: photosName[indexPath.row])
+        let photo = photos[indexPath.row]
+        guard let imageUrl = URL(string: photo.largeImageURL) else { return }
+        singleImageVC.fullImageURL = imageUrl
         singleImageVC.modalPresentationStyle = .fullScreen
         present(singleImageVC, animated: true)
     }
@@ -78,14 +119,12 @@ extension ImagesListViewController: UITableViewDelegate {
         _ tableView: UITableView,
         heightForRowAt indexPath: IndexPath
     ) -> CGFloat {
-        let imageName = photosName[indexPath.row]
-        guard let image = UIImage(named: imageName) else { return 0 }
-
+        let photo = photos[indexPath.row]
         let imageInsets = UIEdgeInsets(top: 4, left: 16, bottom: 4, right: 16)
         let imageViewWidth =
             tableView.bounds.width - imageInsets.left - imageInsets.right
-        let scale = imageViewWidth / image.size.width
-        return image.size.height * scale + imageInsets.top + imageInsets.bottom
+        let scale = imageViewWidth / photo.size.width
+        return photo.size.height * scale + imageInsets.top + imageInsets.bottom
     }
 
 }
@@ -94,7 +133,7 @@ extension ImagesListViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int)
         -> Int
     {
-        return photosName.count
+        return photos.count
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath)
@@ -108,7 +147,47 @@ extension ImagesListViewController: UITableViewDataSource {
             return UITableViewCell()
         }
         setUpCell(for: imageListCell, with: indexPath)
+        imageListCell.delegate = self
         return imageListCell
     }
 
+    func tableView(
+        _ tableView: UITableView,
+        willDisplay cell: UITableViewCell,
+        forRowAt indexPath: IndexPath
+    ) {
+        if indexPath.row == photos.count - 1 {
+            imageListService.fetchPhotosNextPage()
+        }
+    }
+}
+
+extension ImagesListViewController: ImageListCellDelegate {
+    func didTapLikeButton(_ cell: ImageListCell) {
+        print("Принт нажатия из делегата")
+        guard let indexPath = imageTableView.indexPath(for: cell) else {
+            return
+        }
+        let photo = photos[indexPath.row]
+        UIBlockingProgressHUD.show()
+        imageListService.changeLike(photoId: photo.id, isLiked: !photo.isLiked)
+        { result in
+            switch result {
+            case .success:
+                DispatchQueue.main.async {
+                    self.photos = self.imageListService.photos
+                    cell.setIsLiked(!photo.isLiked)
+                    UIBlockingProgressHUD.dismiss()
+                }
+            case .failure:
+                DispatchQueue.main.async {
+                    UIBlockingProgressHUD.dismiss()
+                    AlertDialogPresenter.show(
+                        vc: self,
+                        model: AlertDialogViewModel.defaultError()
+                    )
+                }
+            }
+        }
+    }
 }

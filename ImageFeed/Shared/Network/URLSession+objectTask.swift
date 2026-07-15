@@ -3,9 +3,9 @@ import Foundation
 extension URLSession {
     func objectTask<T: Decodable>(
         for request: URLRequest,
+        decoder: JSONDecoder = JSONDecoder(),
         completion: @escaping (Result<T, Error>) -> Void
     ) -> URLSessionTask {
-        let decoder = JSONDecoder()
         return self.data(for: request) { result in
             switch result {
             case .success(let data):

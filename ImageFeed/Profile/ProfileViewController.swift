@@ -13,6 +13,7 @@ final class ProfileViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setUpUI()
+        avatarImageAndLogoutButtonStackView.logoutButton.delegate = self
         guard let profile = profileService.profileUIModel else { return }
         self.updateProfile(with: profile)
         NotificationCenter.default.addObserver(
@@ -94,4 +95,35 @@ final class ProfileViewController: UIViewController {
                 ]
             )
     }
+}
+
+extension ProfileViewController: LogoutButtonDelegate {
+    func logout() {
+        AlertDialogPresenter.show(
+            vc: self,
+            model: AlertDialogViewModel.logoutAlert()
+        )
+    }
+}
+
+extension AlertDialogViewModel {
+    static func logoutAlert() -> AlertDialogViewModel {
+        AlertDialogViewModel(
+            title: "Выход",
+            subTitle: "Уверены что хотите выйти?",
+            actionTitle: "Выйти",
+            cancelTitle: "Отмена",
+            action: {
+                ProfileLogoutService.shared.logout()
+                guard
+                    let window = UIApplication.shared.connectedScenes
+                        .compactMap({ ($0 as? UIWindowScene)?.keyWindow })
+                        .first
+                else { return }
+                window.rootViewController = SplashViewController()
+            }
+        )
+
+    }
+
 }

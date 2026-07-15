@@ -1,17 +1,9 @@
+import Kingfisher
 import UIKit
 
 final class SingleImageViewController: UIViewController {
 
-    var image: UIImage? {
-        didSet {
-            guard isViewLoaded else { return }
-            imageView.image = image
-            if let image = image {
-                imageView.frame.size = image.size
-                rescaleAndCenterImageInScrollView(image: image)
-            }
-        }
-    }
+    var fullImageURL: URL?
 
     private let scrollView: UIScrollView = {
         let scrollView = UIScrollView()
@@ -43,10 +35,36 @@ final class SingleImageViewController: UIViewController {
         setupScrollView()
         setupBackButton()
         setupShareButton()
-        imageView.image = image
-        if let image = image {
-            imageView.frame.size = image.size
-            rescaleAndCenterImageInScrollView(image: image)
+        loadImage()
+    }
+
+    private func loadImage() {
+        guard let fullImageURL else { return }
+        UIBlockingProgressHUD.show()
+        imageView.kf.setImage(with: fullImageURL) { [weak self] result in
+            UIBlockingProgressHUD.dismiss()
+            guard let self else { return }
+
+            switch result {
+            case .success(let imageResult):
+                self.imageView.frame.size = imageResult.image.size
+                self.rescaleAndCenterImageInScrollView(
+                    image: imageResult.image
+                )
+            case .failure:
+                AlertDialogPresenter.show(
+                    vc: self,
+                    model: AlertDialogViewModel(
+                        title: "Что то пошло не так",
+                        subTitle: "Попробовать еще раз?",
+                        actionTitle: "Повторить",
+                        cancelTitle: "Не надо",
+                        action: {
+                            self.loadImage()
+                        }
+                    )
+                )
+            }
         }
     }
 
@@ -69,13 +87,22 @@ final class SingleImageViewController: UIViewController {
         NSLayoutConstraint.activate([
             backButton.widthAnchor.constraint(equalToConstant: 24),
             backButton.heightAnchor.constraint(equalToConstant: 24),
-            backButton.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 8),
-            backButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 12),
+            backButton.leadingAnchor.constraint(
+                equalTo: view.safeAreaLayoutGuide.leadingAnchor,
+                constant: 8
+            ),
+            backButton.topAnchor.constraint(
+                equalTo: view.safeAreaLayoutGuide.topAnchor,
+                constant: 12
+            ),
         ])
 
-        backButton.addAction(UIAction { [weak self] _ in
-            self?.dismiss(animated: true)
-        }, for: .touchUpInside)
+        backButton.addAction(
+            UIAction { [weak self] _ in
+                self?.dismiss(animated: true)
+            },
+            for: .touchUpInside
+        )
     }
 
     private func setupShareButton() {
@@ -84,9 +111,16 @@ final class SingleImageViewController: UIViewController {
         NSLayoutConstraint.activate([
             shareButton.widthAnchor.constraint(equalToConstant: 50),
             shareButton.heightAnchor.constraint(equalToConstant: 50),
-            shareButton.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
-            shareButton.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
-            shareButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -16),
+            shareButton.leadingAnchor.constraint(
+                equalTo: view.safeAreaLayoutGuide.leadingAnchor
+            ),
+            shareButton.trailingAnchor.constraint(
+                equalTo: view.safeAreaLayoutGuide.trailingAnchor
+            ),
+            shareButton.bottomAnchor.constraint(
+                equalTo: view.safeAreaLayoutGuide.bottomAnchor,
+                constant: -16
+            ),
         ])
 
         shareButton.onTap = { [weak self] in
@@ -112,7 +146,7 @@ final class SingleImageViewController: UIViewController {
     }
 
     private func didTapShareButton() {
-        guard let image else { return }
+        guard let image = imageView.image else { return }
         let activityVC = UIActivityViewController(
             activityItems: [image],
             applicationActivities: nil

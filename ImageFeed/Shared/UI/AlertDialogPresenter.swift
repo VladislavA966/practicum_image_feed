@@ -17,6 +17,15 @@ enum AlertDialogPresenter {
             }
         )
 
+        if let cancelTitle = model.cancelTitle {
+            let cancelAction = UIAlertAction(
+                title: cancelTitle,
+                style: .cancel,
+                handler: nil
+            )
+            alert.addAction(cancelAction)
+        }
+
         alert.addAction(alertAction)
         vc.present(alert, animated: true, completion: nil)
     }
@@ -26,6 +35,7 @@ struct AlertDialogViewModel {
     let title: String
     let subTitle: String
     let actionTitle: String
+    var cancelTitle: String? = nil
     let action: () -> Void
 
     static func defaultError() -> AlertDialogViewModel {
