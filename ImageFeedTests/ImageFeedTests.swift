@@ -15,11 +15,9 @@ final class ImagesListServiceTests: XCTestCase {
             exp.fulfill()
         }
 
-        service.fetchPhotosNextPage() {_ in }
+        service.fetchPhotosNextPage()
         wait(for: [exp], timeout: 10)
 
         XCTAssertEqual(service.photos.count, 10)
-
     }
-
 }

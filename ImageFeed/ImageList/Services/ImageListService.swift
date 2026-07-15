@@ -37,10 +37,10 @@ final class ImageListService {
             defer { self.task = nil }
             switch result {
             case .success(let photoResults):
-                let newPhotos = photoResults.map { PhotoUIModel(from: $0) }
-                self.photos.append(contentsOf: newPhotos)
-                self.lastLoadedPage = nextPage
                 DispatchQueue.main.async {
+                    let newPhotos = photoResults.map { PhotoUIModel(from: $0) }
+                    self.photos.append(contentsOf: newPhotos)
+                    self.lastLoadedPage = nextPage
                     NotificationCenter.default.post(
                         name: ImageListService.didChangeNotification,
                         object: self
@@ -184,5 +184,6 @@ final class ImageListService {
     func clearData() {
         task = nil
         photos = []
+        lastLoadedPage = nil
     }
 }
