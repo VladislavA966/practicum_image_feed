@@ -78,9 +78,8 @@ extension AuthViewController: WebViewViewControllerDelegate {
                 switch result {
                 case .success(_):
                     self.delegate?.didAuthenticate(self)
-                case .failure(let error):
+                case .failure:
                     AlertDialogPresenter.show(vc: self, model: .loginError())
-                    print("\(error)")
                 }
             }
         )

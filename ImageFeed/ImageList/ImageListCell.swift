@@ -60,7 +60,6 @@ final class ImageListCell: UITableViewCell {
     }
 
     @objc private func likeButtonTapped() {
-        print("Принт нажатия из ячейки")
         delegate?.didTapLikeButton(self)
     }
 

@@ -48,6 +48,7 @@ final class WebViewViewController: UIViewController & WebViewControllerProtocol
 
     private func setupUI() {
         webView.navigationDelegate = self
+        webView.accessibilityIdentifier = "UnsplashWebView"
         webView.backgroundColor = .ypWhite
         view.addSubview(webView)
         view.addSubview(progressView)

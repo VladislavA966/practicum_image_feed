@@ -20,6 +20,7 @@ final class LoginButton: UIButton {
         titleLabel?.font = .systemFont(ofSize: 17, weight: .bold)
         layer.cornerRadius = 16
         clipsToBounds = true
+        accessibilityIdentifier = "Authenticate"
 
         addAction(
             UIAction { [weak self] _ in

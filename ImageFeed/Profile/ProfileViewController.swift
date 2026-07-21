@@ -1,31 +1,25 @@
 import Kingfisher
 import UIKit
 
-final class ProfileViewController: UIViewController {
-    private let profileService = ProfileService.shared
-    private let profileImageService = ProfileImageService.shared
+final class ProfileViewController: UIViewController, ProfileViewControllerProtocol {
+    var presenter: ProfilePresenterProtocol?
+
     private let avatarImageAndLogoutButtonStackView =
         AvatarImageAndLogoutButtonStackView()
     private let userNameLabel = NameLabel()
     private let tagLabel = TagLabel()
     private let statusLabel = StatusLabel()
-    private var profileImageServiceObserver: NSObjectProtocol?
+
     override func viewDidLoad() {
         super.viewDidLoad()
         setUpUI()
+
+        let presenter = presenter ?? ProfilePresenter()
+        self.presenter = presenter
+        presenter.view = self
+
         avatarImageAndLogoutButtonStackView.logoutButton.delegate = self
-        guard let profile = profileService.profileUIModel else { return }
-        self.updateProfile(with: profile)
-        NotificationCenter.default.addObserver(
-            forName: ProfileImageService.didChangeNotification,
-            object: nil,
-            queue: .main,
-        ) {
-            [weak self] _ in
-            guard let self = self else { return }
-            self.updateAvatar()
-        }
-        updateAvatar()
+        presenter.viewDidLoad()
     }
 
     private func setUpUI() {
@@ -54,12 +48,14 @@ final class ProfileViewController: UIViewController {
         avatarImageAndLogoutButtonStackView.widthAnchor.constraint(
             equalTo: mainStackView.widthAnchor
         ).isActive = true
+        userNameLabel.accessibilityIdentifier = "profileName"
+        tagLabel.accessibilityIdentifier = "profileLogin"
         mainStackView.addArrangedSubview(userNameLabel)
         mainStackView.addArrangedSubview(tagLabel)
         mainStackView.addArrangedSubview(statusLabel)
     }
 
-    private func updateProfile(with profile: ProfileUIModel) {
+    func updateProfileDetails(profile: ProfileUIModel) {
         userNameLabel.text = profile.name.isEmpty ? "Не указано" : profile.name
         tagLabel.text =
             profile.loginName.isEmpty ? "Не указано" : profile.loginName
@@ -67,11 +63,7 @@ final class ProfileViewController: UIViewController {
             (profile.bio?.isEmpty ?? true) ? "Не указано" : profile.bio
     }
 
-    private func updateAvatar() {
-        guard
-            let profileImageURL = ProfileImageService.shared.imageUrl,
-            let url = URL(string: profileImageURL)
-        else { return }
+    func updateAvatar(url: URL) {
         let placeholderImage = UIImage(systemName: "person.circle.fill")?
             .withTintColor(.lightGray, renderingMode: .alwaysOriginal)
             .withConfiguration(
@@ -95,35 +87,40 @@ final class ProfileViewController: UIViewController {
                 ]
             )
     }
+
+    func showLogoutAlert() {
+        AlertDialogPresenter.show(
+            vc: self,
+            model: AlertDialogViewModel.logoutAlert { [weak self] in
+                self?.presenter?.confirmLogout()
+            }
+        )
+    }
+
+    func switchToSplashScreen() {
+        guard
+            let window = UIApplication.shared.connectedScenes
+                .compactMap({ ($0 as? UIWindowScene)?.keyWindow })
+                .first
+        else { return }
+        window.rootViewController = SplashViewController()
+    }
 }
 
 extension ProfileViewController: LogoutButtonDelegate {
     func logout() {
-        AlertDialogPresenter.show(
-            vc: self,
-            model: AlertDialogViewModel.logoutAlert()
-        )
+        presenter?.didTapLogout()
     }
 }
 
 extension AlertDialogViewModel {
-    static func logoutAlert() -> AlertDialogViewModel {
+    static func logoutAlert(action: @escaping () -> Void) -> AlertDialogViewModel {
         AlertDialogViewModel(
             title: "Выход",
             subTitle: "Уверены что хотите выйти?",
             actionTitle: "Выйти",
             cancelTitle: "Отмена",
-            action: {
-                ProfileLogoutService.shared.logout()
-                guard
-                    let window = UIApplication.shared.connectedScenes
-                        .compactMap({ ($0 as? UIWindowScene)?.keyWindow })
-                        .first
-                else { return }
-                window.rootViewController = SplashViewController()
-            }
+            action: action
         )
-
     }
-
 }
