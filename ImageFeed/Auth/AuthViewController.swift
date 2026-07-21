@@ -50,6 +50,10 @@ final class AuthViewController: UIViewController {
 
     private func didTapLogin() {
         let webViewController = WebViewViewController()
+        let authHelper = AuthHelper()
+        let presenter = WebViewPresenter(authHelper: authHelper)
+        webViewController.presenter = presenter
+        presenter.view = webViewController
         webViewController.delegate = self
         navigationController?.pushViewController(
             webViewController,
@@ -74,9 +78,8 @@ extension AuthViewController: WebViewViewControllerDelegate {
                 switch result {
                 case .success(_):
                     self.delegate?.didAuthenticate(self)
-                case .failure(let error):
+                case .failure:
                     AlertDialogPresenter.show(vc: self, model: .loginError())
-                    print("\(error)")
                 }
             }
         )

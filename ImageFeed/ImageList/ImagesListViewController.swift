@@ -1,13 +1,9 @@
 import ProgressHUD
 import UIKit
 
-final class ImagesListViewController: UIViewController {
+final class ImagesListViewController: UIViewController, ImagesListViewControllerProtocol {
 
-    private var isFirstLoadData = true
-
-    private let imageListService = ImageListService.shared
-
-    private var photos: [PhotoUIModel] = []
+    var presenter: ImagesListPresenterProtocol?
 
     private let imageTableView = UITableView()
 
@@ -15,20 +11,11 @@ final class ImagesListViewController: UIViewController {
         super.viewDidLoad()
         view.backgroundColor = .ypBlack
         setUpTableView()
-        UIBlockingProgressHUD.show()
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(updateTableViewAnimated),
-            name: ImageListService.didChangeNotification,
-            object: nil
-        )
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(didFailure),
-            name: ImageListService.didFaultNotification,
-            object: nil
-        )
-        imageListService.fetchPhotosNextPage()
+
+        let presenter = presenter ?? ImagesListPresenter()
+        self.presenter = presenter
+        presenter.view = self
+        presenter.viewDidLoad()
     }
 
     private func setUpTableView() {
@@ -61,8 +48,8 @@ final class ImagesListViewController: UIViewController {
     }
 
     private func setUpCell(for cell: ImageListCell, with indexPath: IndexPath) {
-        let photo = photos[indexPath.row]
-        guard let imageUrl = URL(string: photo.thumbImageURL)
+        guard let photo = presenter?.photo(at: indexPath.row),
+            let imageUrl = URL(string: photo.thumbImageURL)
         else { return }
         cell.configureCell(
             imageURL: imageUrl,
@@ -71,14 +58,7 @@ final class ImagesListViewController: UIViewController {
         )
     }
 
-    @objc private func updateTableViewAnimated() {
-        if isFirstLoadData {
-            UIBlockingProgressHUD.dismiss()
-            isFirstLoadData = false
-        }
-        let oldCount = photos.count
-        photos = imageListService.photos
-        let newCount = photos.count
+    func updateTableViewAnimated(oldCount: Int, newCount: Int) {
         imageTableView.performBatchUpdates {
             let indexPaths = (oldCount..<newCount).map {
                 IndexPath(row: $0, section: 0)
@@ -90,15 +70,28 @@ final class ImagesListViewController: UIViewController {
         }
     }
 
-    @objc private func didFailure() {
-        if isFirstLoadData {
-            UIBlockingProgressHUD.dismiss()
-            isFirstLoadData = false
-        }
+    func showLoading() {
+        UIBlockingProgressHUD.show()
+    }
+
+    func hideLoading() {
+        UIBlockingProgressHUD.dismiss()
+    }
+
+    func showError() {
         AlertDialogPresenter.show(
             vc: self,
             model: AlertDialogViewModel.defaultError()
         )
+    }
+
+    func setIsLiked(at index: Int, isLiked: Bool) {
+        let indexPath = IndexPath(row: index, section: 0)
+        guard
+            let cell = imageTableView.cellForRow(at: indexPath)
+                as? ImageListCell
+        else { return }
+        cell.setIsLiked(isLiked)
     }
 }
 
@@ -108,8 +101,9 @@ extension ImagesListViewController: UITableViewDelegate {
         didSelectRowAt indexPath: IndexPath
     ) {
         let singleImageVC = SingleImageViewController()
-        let photo = photos[indexPath.row]
-        guard let imageUrl = URL(string: photo.largeImageURL) else { return }
+        guard let imageUrl = presenter?.largeImageURL(at: indexPath.row) else {
+            return
+        }
         singleImageVC.fullImageURL = imageUrl
         singleImageVC.modalPresentationStyle = .fullScreen
         present(singleImageVC, animated: true)
@@ -119,7 +113,7 @@ extension ImagesListViewController: UITableViewDelegate {
         _ tableView: UITableView,
         heightForRowAt indexPath: IndexPath
     ) -> CGFloat {
-        let photo = photos[indexPath.row]
+        guard let photo = presenter?.photo(at: indexPath.row) else { return 0 }
         let imageInsets = UIEdgeInsets(top: 4, left: 16, bottom: 4, right: 16)
         let imageViewWidth =
             tableView.bounds.width - imageInsets.left - imageInsets.right
@@ -133,7 +127,7 @@ extension ImagesListViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int)
         -> Int
     {
-        return photos.count
+        return presenter?.photosCount() ?? 0
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath)
@@ -156,38 +150,15 @@ extension ImagesListViewController: UITableViewDataSource {
         willDisplay cell: UITableViewCell,
         forRowAt indexPath: IndexPath
     ) {
-        if indexPath.row == photos.count - 1 {
-            imageListService.fetchPhotosNextPage()
-        }
+        presenter?.willDisplayCell(at: indexPath.row)
     }
 }
 
 extension ImagesListViewController: ImageListCellDelegate {
     func didTapLikeButton(_ cell: ImageListCell) {
-        print("Принт нажатия из делегата")
         guard let indexPath = imageTableView.indexPath(for: cell) else {
             return
         }
-        let photo = photos[indexPath.row]
-        UIBlockingProgressHUD.show()
-        imageListService.changeLike(photoId: photo.id, isLiked: !photo.isLiked)
-        { result in
-            switch result {
-            case .success:
-                DispatchQueue.main.async {
-                    self.photos = self.imageListService.photos
-                    cell.setIsLiked(!photo.isLiked)
-                    UIBlockingProgressHUD.dismiss()
-                }
-            case .failure:
-                DispatchQueue.main.async {
-                    UIBlockingProgressHUD.dismiss()
-                    AlertDialogPresenter.show(
-                        vc: self,
-                        model: AlertDialogViewModel.defaultError()
-                    )
-                }
-            }
-        }
+        presenter?.didTapLike(at: indexPath.row)
     }
 }

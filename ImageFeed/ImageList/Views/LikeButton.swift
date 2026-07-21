@@ -6,6 +6,7 @@ final class LikeButton: UIButton {
         setImage(UIImage(systemName: "heart.fill"), for: .normal)
         tintColor = .white.withAlphaComponent(0.5)
         translatesAutoresizingMaskIntoConstraints = false
+        accessibilityIdentifier = "likeButton"
     }
 
     required init?(coder: NSCoder) {

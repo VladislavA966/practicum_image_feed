@@ -47,7 +47,6 @@ final class ProfileService {
                 completion(.success(profileUIModel))
             case .failure(let error):
                 completion(.failure(error))
-                print("Error \(error)")
             }
             self?.task = nil
         }

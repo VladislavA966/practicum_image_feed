@@ -100,7 +100,6 @@ final class ImageListService {
             DispatchQueue.main.async {
                 switch result {
                 case .success:
-                    print("Запрос прошел успешно")
                     if let index = self.photos.firstIndex(where: {
                         $0.id == photoId
                     }) {
@@ -117,7 +116,6 @@ final class ImageListService {
                     }
                     completion(.success(()))
                 case .failure(let error):
-                    print("Ошибка лайка \(error)")
                     completion(.failure(error))
                 }
             }
@@ -170,10 +168,7 @@ final class ImageListService {
             )
         else { return nil }
         var request = URLRequest(url: url)
-        print("Состояние которое мы передаем в запрос: \(isLiked)")
         request.httpMethod = isLiked ? HTTPMethod.post : HTTPMethod.delete
-        print("Метод запроса \(request.httpMethod ?? "ПУСТО")")
-
         request.setValue(
             "Bearer \(token)",
             forHTTPHeaderField: "Authorization"

@@ -1,7 +1,21 @@
 import UIKit
 import WebKit
 
-final class WebViewViewController: UIViewController {
+public protocol WebViewControllerProtocol: AnyObject {
+    var presenter: WebViewPresenterProtocol? { get set }
+    func load(request: URLRequest)
+    func setProgressValue(_ value: Float)
+    func setProgressHidden(_ isHidden: Bool)
+}
+
+final class WebViewViewController: UIViewController & WebViewControllerProtocol
+{
+    func load(request: URLRequest) {
+        webView.load(request)
+    }
+
+    var presenter: (any WebViewPresenterProtocol)?
+
     weak var delegate: WebViewViewControllerDelegate?
 
     private let webView: WKWebView = {
@@ -22,7 +36,7 @@ final class WebViewViewController: UIViewController {
         setupUI()
         setupConstraints()
         setupObservers()
-        loadAuthView()
+        presenter?.viewDidLoad()
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -34,6 +48,7 @@ final class WebViewViewController: UIViewController {
 
     private func setupUI() {
         webView.navigationDelegate = self
+        webView.accessibilityIdentifier = "UnsplashWebView"
         webView.backgroundColor = .ypWhite
         view.addSubview(webView)
         view.addSubview(progressView)
@@ -44,13 +59,21 @@ final class WebViewViewController: UIViewController {
         webView.translatesAutoresizingMaskIntoConstraints = false
         progressView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            webView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            webView.topAnchor.constraint(
+                equalTo: view.safeAreaLayoutGuide.topAnchor
+            ),
             webView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             webView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             webView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            progressView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            progressView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
-            progressView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
+            progressView.topAnchor.constraint(
+                equalTo: view.safeAreaLayoutGuide.topAnchor
+            ),
+            progressView.leadingAnchor.constraint(
+                equalTo: view.safeAreaLayoutGuide.leadingAnchor
+            ),
+            progressView.trailingAnchor.constraint(
+                equalTo: view.safeAreaLayoutGuide.trailingAnchor
+            ),
         ])
     }
 
@@ -59,7 +82,8 @@ final class WebViewViewController: UIViewController {
             \.estimatedProgress,
             options: [],
             changeHandler: { [weak self] _, _ in
-                self?.updateProgress()
+                guard let self else { return }
+                presenter?.didUpdateProgressValue(webView.estimatedProgress)
             }
         )
     }
@@ -68,7 +92,8 @@ final class WebViewViewController: UIViewController {
 
     private func configureBackButton() {
         navigationController?.navigationBar.backIndicatorImage = .backIcon
-        navigationController?.navigationBar.backIndicatorTransitionMaskImage = .backIcon
+        navigationController?.navigationBar.backIndicatorTransitionMaskImage =
+            .backIcon
         navigationItem.backBarButtonItem = UIBarButtonItem(
             title: "",
             style: .plain,
@@ -78,24 +103,12 @@ final class WebViewViewController: UIViewController {
         navigationItem.backBarButtonItem?.tintColor = .ypBlack
     }
 
-    private func loadAuthView() {
-        guard var urlComponents = URLComponents(string: WebViewConstants.unsplashAuthorizeURLString)
-        else { return }
-
-        urlComponents.queryItems = [
-            URLQueryItem(name: "client_id", value: Constants.accessKey),
-            URLQueryItem(name: "redirect_uri", value: Constants.redirectURI),
-            URLQueryItem(name: "response_type", value: "code"),
-            URLQueryItem(name: "scope", value: Constants.accessScope),
-        ]
-
-        guard let url = urlComponents.url else { return }
-        webView.load(URLRequest(url: url))
+    func setProgressValue(_ newValue: Float) {
+        progressView.progress = newValue
     }
 
-    private func updateProgress() {
-        progressView.progress = Float(webView.estimatedProgress)
-        progressView.isHidden = fabs(webView.estimatedProgress - 1.0) <= 0.0001
+    func setProgressHidden(_ isHidden: Bool) {
+        progressView.isHidden = isHidden
     }
 }
 
@@ -116,21 +129,19 @@ extension WebViewViewController: WKNavigationDelegate {
     }
 
     private func code(from navigationAction: WKNavigationAction) -> String? {
-        guard
-            let url = navigationAction.request.url,
-            let urlComponents = URLComponents(string: url.absoluteString),
-            urlComponents.path == "/oauth/authorize/native",
-            let items = urlComponents.queryItems,
-            let codeItem = items.first(where: { $0.name == "code" })
-        else { return nil }
-
-        return codeItem.value
+        if let url = navigationAction.request.url {
+            return presenter?.code(from: url)
+        }
+        return nil
     }
 }
 
 // MARK: - WebViewViewControllerDelegate
 
 protocol WebViewViewControllerDelegate: AnyObject {
-    func webViewViewController(_ vc: WebViewViewController, didAuthenticateWithCode code: String)
+    func webViewViewController(
+        _ vc: WebViewViewController,
+        didAuthenticateWithCode code: String
+    )
     func webViewViewControllerDidCancel(_ vc: WebViewViewController)
 }
